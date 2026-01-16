@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark blue theme - OutreachBoosters branding */
+    --background: 217 32% 17%; /* Dark blue background */
+    --foreground: 210 40% 98%; /* White text */
+    --card: 217 32% 20%; /* Slightly lighter dark blue for cards */
+    --card-foreground: 210 40% 98%;
+    --popover: 217 32% 20%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 200 100% 50%; /* Light blue for primary actions */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 32% 25%; /* Medium blue for secondary */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 25%;
+    --muted-foreground: 210 60% 80%; /* Light blue for muted text */
+    --accent: 200 100% 50%; /* Light blue accent */
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 32% 30%; /* Border color */
+    --input: 217 32% 25%;
+    --ring: 200 100% 50%; /* Light blue ring */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    @apply text-foreground;
+    background: #1E2C5C;
+    background: linear-gradient(90deg, rgba(30, 44, 92, 1) 0%, rgba(22, 79, 161, 1) 50%, rgba(30, 44, 92, 1) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
