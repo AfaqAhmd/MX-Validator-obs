@@ -80,7 +80,7 @@ export default function UploadForm({ onUploadSuccess }: { onUploadSuccess?: (ses
       if (response.ok) {
         // Small delay to show 100% completion
         setTimeout(() => {
-          alert('File uploaded and MX records scanned successfully!');
+          // alert('File uploaded and MX records scanned successfully!');
           setFile(null);
           setUploadProgress(0);
           if (fileInputRef.current) {

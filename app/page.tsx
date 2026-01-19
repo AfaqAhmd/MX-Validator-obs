@@ -104,8 +104,8 @@ export default function Home() {
     <div className="container mx-auto p-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">MX Validator</h1>
-        <p className="text-gray-600">
-          Upload a CSV file with email and domain columns to automatically scan MX records
+        <p className="">
+         Upload your lead list and instantly verify which email domains have valid MX records. Stop wasting time on undeliverable emails.
         </p>
       </div>
 
