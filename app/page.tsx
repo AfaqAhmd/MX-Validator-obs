@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import UploadForm from '@/components/upload-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -41,6 +42,7 @@ export default function Home() {
   const [gateSubmitting, setGateSubmitting] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   // Check if user is verified on mount
   useEffect(() => {
@@ -134,6 +136,11 @@ export default function Home() {
 
     if (!gateName.trim() || !gateCompany.trim() || !gateEmail.trim()) {
       setGateError('Please fill in all fields.');
+      return;
+    }
+
+    if (!acceptedPrivacy) {
+      setGateError('Please agree to the Privacy Policy to continue.');
       return;
     }
 
@@ -235,6 +242,23 @@ export default function Home() {
                     />
                   </div>
 
+                  <div className="flex items-start gap-2 pt-1">
+                    <input
+                      id="gate-privacy"
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border border-white/40 bg-transparent"
+                      checked={acceptedPrivacy}
+                      onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                    />
+                    <label htmlFor="gate-privacy" className="text-xs text-white/80 text-left select-none">
+                      I agree to the{' '}
+                      <Link href="/privacy" className="text-primary underline hover:text-primary/80">
+                        Privacy Policy
+                      </Link>
+                      .
+                    </label>
+                  </div>
+
                   {gateError && (
                     <div className="flex items-start gap-2 rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
                       <AlertCircle className="h-4 w-4 mt-0.5" />
@@ -250,9 +274,7 @@ export default function Home() {
                     {gateSubmitting ? 'Sending verification email...' : 'Send Verification Email'}
                   </Button>
 
-                  <p className="text-[11px] text-center text-white/50 mt-1">
-                    We only use this information to provide insights and improve your MX validation experience.
-                  </p>
+                
                 </form>
               </>
             ) : (
