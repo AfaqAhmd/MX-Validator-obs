@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UploadForm from '@/components/upload-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -12,7 +12,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Download, AlertCircle } from 'lucide-react';
 import ResultsChart from '@/components/results-chart';
 
 interface EmailRecord {
@@ -31,6 +32,33 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('analytics');
+
+  // Access gate state
+  const [hasAccess, setHasAccess] = useState(false);
+  const [gateName, setGateName] = useState('');
+  const [gateCompany, setGateCompany] = useState('');
+  const [gateEmail, setGateEmail] = useState('');
+  const [gateSubmitting, setGateSubmitting] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  // Check if user is verified on mount
+  useEffect(() => {
+    // Check localStorage for verified status
+    const verified = localStorage.getItem('mx_validator_verified');
+    if (verified === 'true') {
+      setHasAccess(true);
+    }
+
+    // Check URL params for verification success
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verified') === 'true') {
+      localStorage.setItem('mx_validator_verified', 'true');
+      setHasAccess(true);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const fetchRecords = async (session: string) => {
     if (!session) return;
@@ -100,12 +128,162 @@ export default function Home() {
     }
   };
 
+  const handleAccessSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setGateError(null);
+
+    if (!gateName.trim() || !gateCompany.trim() || !gateEmail.trim()) {
+      setGateError('Please fill in all fields.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(gateEmail.trim())) {
+      setGateError('Please enter a valid email address.');
+      return;
+    }
+
+    setGateSubmitting(true);
+    try {
+      const response = await fetch('/api/access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: gateName.trim(),
+          company: gateCompany.trim(),
+          email: gateEmail.trim(),
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setGateError(data?.error || 'Failed to send verification email. Please try again.');
+        return;
+      }
+
+      // Email sent successfully
+      setEmailSent(true);
+    } catch (error) {
+      console.error('Access gate error:', error);
+      setGateError('Something went wrong. Please try again.');
+    } finally {
+      setGateSubmitting(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto p-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">MX Validator</h1>
-        <p className="">
-         Upload your lead list and instantly verify which email domains have valid MX records. Stop wasting time on undeliverable emails.
+    <div className="container mx-auto p-8 max-w-7xl relative">
+      {/* Access gate overlay */}
+      {!hasAccess && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-card border border-white/20 p-6 shadow-2xl">
+            {!emailSent ? (
+              <>
+                <h2 className="text-2xl font-bold text-white text-center mb-2">Get Access to MX Validator</h2>
+                <p className="text-sm text-white/70 text-center mb-4">
+                  Enter your details and verify your email to start scanning MX records.
+                </p>
+
+                <form onSubmit={handleAccessSubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-white/90" htmlFor="gate-name">
+                      Name
+                    </label>
+                    <Input
+                      id="gate-name"
+                      placeholder="Your full name"
+                      value={gateName}
+                      onChange={(e) => setGateName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-white/90" htmlFor="gate-company">
+                      Company name
+                    </label>
+                    <Input
+                      id="gate-company"
+                      placeholder="Your company"
+                      value={gateCompany}
+                      onChange={(e) => setGateCompany(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-white/90" htmlFor="gate-email">
+                      Work email
+                    </label>
+                    <Input
+                      id="gate-email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={gateEmail}
+                      onChange={(e) => setGateEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {gateError && (
+                    <div className="flex items-start gap-2 rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                      <AlertCircle className="h-4 w-4 mt-0.5" />
+                      <p>{gateError}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={gateSubmitting}
+                  >
+                    {gateSubmitting ? 'Sending verification email...' : 'Send Verification Email'}
+                  </Button>
+
+                  <p className="text-[11px] text-center text-white/50 mt-1">
+                    We only use this information to provide insights and improve your MX validation experience.
+                  </p>
+                </form>
+              </>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-white">Check Your Email</h2>
+                <p className="text-sm text-white/70">
+                  We've sent a verification link to <span className="font-semibold text-white">{gateEmail}</span>
+                </p>
+                <p className="text-xs text-white/60">
+                  Click the link in the email to verify your account and access MX Validator.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEmailSent(false);
+                    setGateError(null);
+                  }}
+                  className="mt-4"
+                >
+                  Use Different Email
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="mb-10 flex flex-col items-center text-center">
+        <h1 className="text-4xl md:text-5xl lg:text-9xl font-extrabold tracking-tight text-white drop-shadow-sm mb-4">
+          MX Validator
+        </h1>
+        <p className="max-w-2xl text-sm md:text-base text-white/80">
+          Upload your lead list and instantly verify which email domains have valid MX records.
+          Stop wasting time on undeliverable emails.
         </p>
       </div>
 
