@@ -178,12 +178,14 @@ export async function POST(request: NextRequest) {
     `;
 
     if (existingUser.length > 0) {
-      const user = existingUser[0];
+      const user = existingUser[0] as { is_verified: boolean };
       if (user.is_verified) {
-        return NextResponse.json(
-          { error: 'This email is already verified. You can access the tool.' },
-          { status: 400 }
-        );
+        // Email already verified: allow access immediately without sending another email
+        return NextResponse.json({
+          success: true,
+          alreadyVerified: true,
+          message: 'Email already verified. You can access the tool.',
+        });
       }
       // Update existing user with new token
       await sql`

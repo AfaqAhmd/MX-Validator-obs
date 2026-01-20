@@ -164,7 +164,14 @@ export default function Home() {
         return;
       }
 
-      // Email sent successfully
+      // If email is already verified, grant access immediately
+      if (data?.alreadyVerified) {
+        localStorage.setItem('mx_validator_verified', 'true');
+        setHasAccess(true);
+        return;
+      }
+
+      // Email sent successfully, show \"check your email\" screen
       setEmailSent(true);
     } catch (error) {
       console.error('Access gate error:', error);
