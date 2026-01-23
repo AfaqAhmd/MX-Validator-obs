@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { emailRecords } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
+import { checkUserVerification } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  // Check if user is verified
+  const verification = await checkUserVerification(request);
+  if (!verification.verified) {
+    return NextResponse.json(
+      { error: 'Unauthorized. Please verify your email to access this tool.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const { sessionId } = await params;
     

@@ -44,21 +44,33 @@ export default function Home() {
   const [emailSent, setEmailSent] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
-  // Check if user is verified on mount
+  // Check if user is verified on mount (server-side check)
   useEffect(() => {
-    // Check localStorage for verified status
-    const verified = localStorage.getItem('mx_validator_verified');
-    if (verified === 'true') {
-      setHasAccess(true);
-    }
+    const checkVerification = async () => {
+      try {
+        const response = await fetch('/api/check-verification');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.verified) {
+            setHasAccess(true);
+            localStorage.setItem('mx_validator_verified', 'true');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking verification:', error);
+      }
+    };
 
-    // Check URL params for verification success
+    // Check URL params for verification success first
     const params = new URLSearchParams(window.location.search);
     if (params.get('verified') === 'true') {
-      localStorage.setItem('mx_validator_verified', 'true');
-      setHasAccess(true);
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
+      // Check server-side verification
+      checkVerification();
+    } else {
+      // Check server-side verification on load
+      checkVerification();
     }
   }, []);
 
@@ -68,6 +80,12 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await fetch(`/api/records/${session}`);
+      if (response.status === 401) {
+        // User is not verified, show access gate
+        setHasAccess(false);
+        localStorage.removeItem('mx_validator_verified');
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setRecords(data);
@@ -130,6 +148,12 @@ export default function Home() {
     }
   };
 
+  // Domain validation function
+  const isValidDomain = (domain: string): boolean => {
+    const domainRegex = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+    return domainRegex.test(domain.trim()) && domain.trim().length <= 253;
+  };
+
   const handleAccessSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setGateError(null);
@@ -141,6 +165,12 @@ export default function Home() {
 
     if (!acceptedPrivacy) {
       setGateError('Please agree to the Privacy Policy to continue.');
+      return;
+    }
+
+    // Validate domain format
+    if (!isValidDomain(gateCompany.trim())) {
+      setGateError('Please enter a valid domain name (e.g., example.com).');
       return;
     }
 
@@ -217,11 +247,11 @@ export default function Home() {
 
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-white/90" htmlFor="gate-company">
-                      Company name
+                      Domain name
                     </label>
                     <Input
                       id="gate-company"
-                      placeholder="Your company"
+                      placeholder="example.com"
                       value={gateCompany}
                       onChange={(e) => setGateCompany(e.target.value)}
                       required
@@ -230,7 +260,7 @@ export default function Home() {
 
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-white/90" htmlFor="gate-email">
-                      Work email
+                      Company email
                     </label>
                     <Input
                       id="gate-email"

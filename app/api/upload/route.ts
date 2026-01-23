@@ -4,8 +4,18 @@ import { emailRecords } from '@/db/schema';
 import { parse } from 'papaparse';
 import { promises as dns } from 'dns';
 import { eq, and } from 'drizzle-orm';
+import { checkUserVerification } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  // Check if user is verified
+  const verification = await checkUserVerification(request);
+  if (!verification.verified) {
+    return NextResponse.json(
+      { error: 'Unauthorized. Please verify your email to access this tool.' },
+      { status: 401 }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

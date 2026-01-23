@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { promises as dns } from 'dns';
 import { randomBytes } from 'crypto';
+import { setVerificationCookie } from '@/lib/auth';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must be set');
@@ -181,11 +182,14 @@ export async function POST(request: NextRequest) {
       const user = existingUser[0] as { is_verified: boolean };
       if (user.is_verified) {
         // Email already verified: allow access immediately without sending another email
-        return NextResponse.json({
+        const response = NextResponse.json({
           success: true,
           alreadyVerified: true,
           message: 'Email already verified. You can access the tool.',
         });
+        // Set verification cookie
+        setVerificationCookie(response, trimmedEmail);
+        return response;
       }
       // Update existing user with new token
       await sql`

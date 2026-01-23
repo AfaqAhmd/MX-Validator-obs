@@ -94,7 +94,12 @@ export default function UploadForm({ onUploadSuccess }: { onUploadSuccess?: (ses
       } else {
         setIsUploading(false);
         setUploadProgress(0);
-        alert(`Upload failed: ${data.error || 'Unknown error'}`);
+        if (response.status === 401) {
+          // User is not verified - trigger page reload to show access gate
+          window.location.reload();
+        } else {
+          alert(`Upload failed: ${data.error || 'Unknown error'}`);
+        }
       }
     } catch (error) {
       clearInterval(progressInterval);

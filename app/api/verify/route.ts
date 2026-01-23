@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { setVerificationCookie } from '@/lib/auth';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must be set');
@@ -28,8 +29,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/?error=invalid_or_expired_token', request.url));
     }
 
-    // Redirect to main page with success
-    return NextResponse.redirect(new URL('/?verified=true', request.url));
+    const user = result[0] as { email: string };
+    
+    // Create response and set verification cookie
+    const response = NextResponse.redirect(new URL('/?verified=true', request.url));
+    setVerificationCookie(response, user.email);
+
+    return response;
   } catch (error) {
     console.error('Verification error:', error);
     return NextResponse.redirect(new URL('/?error=verification_failed', request.url));
