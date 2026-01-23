@@ -6,6 +6,11 @@ import Footer from "@/components/footer";
 export const metadata: Metadata = {
   title: "MX Validator | OutreachBoosters",
   description: "Upload CSV and scan MX records",
+  icons: {
+    icon: '/Logo-3.png',
+    shortcut: '/Logo-3.png',
+    apple: '/Logo-3.png',
+  },
 };
 
 export default function RootLayout({
