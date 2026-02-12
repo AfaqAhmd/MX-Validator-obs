@@ -14,7 +14,7 @@ export default function Footer() {
               © {currentYear} OutreachBoosters. All rights reserved.
             </p>
             <p className="text-xs text-white/60">
-              Cold email & lead generation services
+              GTM & RevOps Partner
             </p>
           </div>
           
